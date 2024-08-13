@@ -1,0 +1,44 @@
+import os
+import shutil
+from mutagen.easyid3 import EasyID3
+from mutagen.id3 import ID3NoHeaderError
+
+# Path to your music folder
+music_folder = input("Enter The Path Of Your Directory)
+
+# Create an output directory for sorted music
+output_folder = os.path.join(music_folder, 'Sorted_By_Album')
+os.makedirs(output_folder, exist_ok=True)
+
+# Function to get the album name from a file
+def get_album(file):
+    try:
+        audio = EasyID3(file)
+        return audio.get('album', [None])[0]
+    except ID3NoHeaderError:
+        return None
+    except Exception as e:
+        print(f"Could not read album for {file}: {e}")
+        return None
+
+# Function to move file to a new location, ensuring no overwrite
+def move_file(src, dst):
+    base, ext = os.path.splitext(dst)
+    counter = 1
+    while os.path.exists(dst):
+        dst = f"{base}_{counter}{ext}"
+        counter += 1
+    shutil.move(src, dst)
+
+# Iterate through all files in the music folder
+for root, dirs, files in os.walk(music_folder):
+    for file in files:
+        if file.endswith(('.mp3', '.flac', '.m4a', '.wav')):
+            file_path = os.path.join(root, file)
+            album = get_album(file_path)
+            if album:
+                album_folder = os.path.join(output_folder, album)
+                os.makedirs(album_folder, exist_ok=True)
+                move_file(file_path, os.path.join(album_folder, file))
+
+print("Music sorted by album!")
